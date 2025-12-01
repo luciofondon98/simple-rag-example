@@ -54,7 +54,16 @@ User -> [Frontend Next.js] -> [Backend FastAPI] -> [OpenAI Embeddings] -> [Chrom
 5.  **Transcription**: OpenAI Whisper processes the audio and returns the transcribed text.
 6.  **Response**: The transcribed text is sent back to the frontend and populated in the chat input field.
 
-### Phase D: Internet Search (When enhanced information is needed)
+### Phase D: Image Analysis (When visual content is uploaded)
+
+1.  **Image Upload**: Users can upload images through the sidebar or via drag & drop on the chat area
+2.  **Image Processing**: The frontend sends image files to the backend `/analyze_image` endpoint
+3.  **Vision Model Processing**: The backend uses OpenAI's GPT-4 Vision model to analyze the image
+4.  **Image Encoding**: Images are converted to base64 format and formatted for the vision model
+5.  **Analysis Generation**: The model generates detailed descriptions of image content, text, objects, etc.
+6.  **Response Integration**: The analysis is returned to the frontend and displayed alongside the image in the chat
+
+### Phase E: Internet Search (When enhanced information is needed)
 
 1.  **Request Enhancement**: The frontend provides a toggle to enable internet search capability
 2.  **Endpoint Selection**: The frontend calls the new `/chat_with_internet` endpoint instead of `/chat`
@@ -63,6 +72,13 @@ User -> [Frontend Next.js] -> [Backend FastAPI] -> [OpenAI Embeddings] -> [Chrom
 5.  **Web Search Execution**: If needed, DuckDuckGo search is performed to retrieve current information
 6.  **Response Integration**: The system combines document context and web search results for comprehensive answers
 7.  **User Feedback**: Clear indicators ("Buscando en la web...") inform users when internet search is happening
+
+### Phase F: General Conversations (When no documents are uploaded)
+
+1.  **Query Detection**: The system detects when no documents have been uploaded yet
+2.  **Direct LLM Interaction**: Instead of using RAG, the system sends the query directly to the LLM
+3.  **General Knowledge Response**: The LLM responds using its pre-trained knowledge without document context
+4.  **Seamless Transition**: The same interface is used regardless of document availability
 
 ---
 
@@ -87,8 +103,21 @@ Chroma is a **Vector** database.
 *   **Function**: Converts audio recordings to text using Whisper API
 *   **Integration**: Frontend AudioRecorder component sends recorded audio to the backend for transcription
 
+### 🖼️ Image Analysis: OpenAI Vision API
+*   **Component**: New `/analyze_image` endpoint in FastAPI backend
+*   **Function**: Analyzes images using OpenAI's GPT-4 Vision model
+*   **Integration**: Frontend image upload component sends image files to the backend for analysis
+*   **Format Support**: Handles common image formats (JPG, PNG, GIF, WebP)
+*   **Processing**: Converts images to base64 and formats for vision model compatibility
+
+### 📥 Drag & Drop Interface
+*   **Component**: Implemented using React's drag and drop events in the chat area
+*   **Function**: Allows direct image upload by dragging files onto the chat interface
+*   **User Experience**: Visual feedback with highlighted drop zone during drag operations
+*   **Integration**: Works seamlessly with the image analysis functionality
+
 ### 🌐 The Body: FastAPI + Docker
-*   **FastAPI**: Exposes REST endpoints (`/chat`, `/upload`, `/transcribe`). It is asynchronous and very fast.
+*   **FastAPI**: Exposes REST endpoints (`/chat`, `/upload`, `/transcribe`, `/analyze_image`, `/chat_with_internet`). It is asynchronous and very fast.
 *   **Docker**: Packages the entire environment.
     *   The `backend` container has Python installed and all AI libraries including OpenAI integration.
     *   The `frontend` container has Node.js and the optimized Next.js server.

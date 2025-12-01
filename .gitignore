@@ -53,3 +53,7 @@ QWEN.md
 GEMINI.md
 AGENTS.md
 langchain_tools.md
+langchain_llms.md
+
+# Temporary files created by editors
+.qwen

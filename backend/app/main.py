@@ -22,6 +22,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     question: str
     history: List[List[str]] = [] # Lista de pares [role, content]
+    force_internet_search: bool = False  # If True, always use internet search
 
 class ChatResponse(BaseModel):
     answer: str
@@ -40,12 +41,33 @@ async def upload_documents(files: List[UploadFile] = File(...)):
         for file in files:
             content = await file.read()
             file_contents.append(content)
-        
+
         num_chunks = rag_service.process_pdfs(file_contents)
         return {"message": f"Procesados exitosamente {len(files)} archivos en {num_chunks} fragmentos."}
     except Exception as e:
         traceback.print_exc()  # Imprimir el error completo en la consola
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/analyze_image")
+async def analyze_image(file: UploadFile = File(...)):
+    """
+    Endpoint para analizar imágenes usando modelos de visión.
+    """
+    try:
+        # Check if file is an image file
+        if not file.content_type or not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image file")
+
+        # Read file content
+        image_content = await file.read()
+
+        # Analyze the image using the RAG service
+        analysis_result = rag_service.analyze_image(image_content, file.filename)
+        return {"analysis": analysis_result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error analyzing image: {str(e)}")
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
@@ -69,7 +91,7 @@ def chat_with_internet(request: ChatRequest):
     try:
         # Convertimos la lista de listas a lista de tuplas para LangChain
         formatted_history = [(msg[0], msg[1]) for msg in request.history]
-        answer = rag_service.get_answer_with_internet(request.question, formatted_history)
+        answer = rag_service.get_answer_with_internet(request.question, formatted_history, request.force_internet_search)
         return ChatResponse(answer=answer)
     except Exception as e:
         traceback.print_exc()

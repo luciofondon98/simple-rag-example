@@ -10,9 +10,12 @@ It is built with a decoupled and professional architecture:
 ## ✨ Features
 
 *   **Document Processing**: Upload and process PDF documents for RAG
-*   **Chat Interface**: Natural language interaction with your documents
+*   **Image Analysis**: Upload and analyze images using AI vision models with detailed descriptions
+*   **Drag & Drop Support**: Drag images directly onto the chat area for instant analysis
+*   **Chat Interface**: Natural language interaction with your documents and images
 *   **Audio Transcription**: **NEW!** Record voice messages and have them transcribed using OpenAI Whisper API
 *   **Internet Search**: **NEW!** Search for current information on the internet when documents aren't sufficient
+*   **General Conversations**: Chat with the AI even without uploading documents
 *   **Real-time Interaction**: Responsive chat interface with typing indicators and smooth scrolling
 *   **Dockerized**: Easy deployment with Docker Compose
 
@@ -67,17 +70,31 @@ simple-rag-modern/
 
 ## 🌐 New Features Explained
 
+### Image Analysis & Drag & Drop
+*   **Image Upload**: Upload images in common formats (JPG, PNG, GIF, WebP) for AI analysis
+*   **Detailed Descriptions**: Get comprehensive analysis of image content, objects, text, and visual elements
+*   **Drag & Drop**: Simply drag images directly onto the chat area for instant analysis
+*   **Visual Integration**: Images are displayed in the chat with their analysis responses
+*   **Vision Model**: Powered by OpenAI's GPT-4 Vision model for accurate image understanding
+
 ### Internet Search Capability
 *   **Hybrid Search**: The system intelligently combines document-based RAG with internet search
 *   **Smart Decision**: Automatically decides when to use internet search based on document availability and relevance
 *   **Clear Indicators**: Shows when searching the internet with "Buscando en la web..." indicator
 *   **Endpoint**: New `/chat_with_internet` endpoint available for internet-enhanced responses
 
+### General Conversations
+*   **No Document Required**: Chat with the AI without uploading any documents or images
+*   **General Knowledge**: Get answers to general questions using the AI's pre-trained knowledge
+*   **Seamless Transition**: Switch between general chat and document-specific questions
+*   **Consistent Interface**: Same clean and intuitive chat interface for all interaction types
+
 ### Frontend UI Improvements
 *   **Smooth Scrolling**: Automatically scrolls to the bottom when new messages appear
 *   **Internet Search Toggle**: Checkbox to enable/disable internet search capability
 *   **Enhanced Loading States**: Different loading messages for different operations
 *   **Status Indicators**: Clear indication of whether internet search is active
+*   **Image Support**: Proper rendering of images in the chat interface
 
 ## 🔧 Local Development (Without Docker)
 

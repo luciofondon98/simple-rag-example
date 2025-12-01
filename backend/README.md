@@ -7,8 +7,11 @@ REST API for document processing and RAG system management with audio transcript
 ## ✨ Features
 
 *   **Document Processing**: PDF upload and processing for RAG
+*   **Image Analysis**: Image upload and analysis using AI vision models
 *   **Chat Interface**: Question-answering system with memory
 *   **Audio Transcription**: Whisper API integration for voice-to-text conversion
+*   **Internet Search**: Enhanced questions with current information from the web
+*   **General Conversations**: Chat without uploaded documents using general AI knowledge
 *   **RESTful API**: Clean and well-documented endpoints
 
 ## 🛠️ Local Development (Manual)
@@ -49,6 +52,7 @@ The server will be available at `http://localhost:8000`.
 
 *   **GET /** - Health check
 *   **POST /upload** - Upload and process PDF documents
-*   **POST /chat** - Chat with your documents
-*   **POST /chat_with_internet** - **NEW!** Chat with internet search capability for current information
-*   **POST /transcribe** - **NEW!** Transcribe audio to text using OpenAI Whisper
+*   **POST /chat** - Chat with your documents (now supports general conversations without documents)
+*   **POST /chat_with_internet** - Chat with internet search capability for current information
+*   **POST /analyze_image** - Analyze images using AI vision models
+*   **POST /transcribe** - Transcribe audio to text using OpenAI Whisper

@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import base64
 from typing import List
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -66,10 +67,10 @@ class RAGService:
             return len(all_chunks)
         return 0
 
-    def get_answer_with_internet(self, question: str, chat_history: List[tuple] = []):
+    def get_answer_with_internet(self, question: str, chat_history: List[tuple] = [], force_internet_search: bool = False):
         """
         Recibe una pregunta y el historial, devuelve la respuesta usando RAG con memoria
-        y búsqueda en internet si es necesario.
+        y búsqueda en internet si es necesario o forzada.
         """
         # Convertir historial de tuplas a objetos Message de LangChain
         lc_history = []
@@ -80,7 +81,7 @@ class RAGService:
                 lc_history.append(AIMessage(content=content))
 
         # First, try to answer from the vector store if documents are available
-        if self.vector_store:
+        if self.vector_store and not force_internet_search:
             # Get relevant documents from the vector store
             retriever = self.vector_store.as_retriever(search_kwargs={"k": 3})
             relevant_docs = retriever.get_relevant_documents(question)
@@ -103,8 +104,8 @@ class RAGService:
                 "chat_history": lc_history
             })
 
-            # If the context seems insufficient, we'll do a web search
-            if "no" in check_response.content.lower() or len(context_str.strip()) < 50:
+            # If the user wants to force internet search or the context seems insufficient, we'll do a web search
+            if force_internet_search or "no" in check_response.content.lower() or len(context_str.strip()) < 50:
                 # Let the user know we're searching the internet
                 search_message = "Buscando en la web para complementar la información...\n\n"
 
@@ -180,7 +181,7 @@ class RAGService:
 
                 return response["answer"]
         else:
-            # If no vector store is available, use internet search only
+            # If no vector store is available or internet search is forced, use internet search
             # Let the user know we're searching the internet
             search_message = "Buscando en la web para responder tu pregunta...\n\n"
 
@@ -213,70 +214,138 @@ class RAGService:
     def get_answer(self, question: str, chat_history: List[tuple] = []):
         """
         Recibe una pregunta y el historial, devuelve la respuesta usando RAG con memoria.
+        Si no hay documentos, responde con el LLM general.
         """
-        if not self.vector_store:
-            return "Por favor, sube documentos primero para inicializar el conocimiento."
+        if self.vector_store:
+            # 1. Retriever básico
+            retriever = self.vector_store.as_retriever(search_kwargs={"k": 3})
 
-        # 1. Retriever básico
-        retriever = self.vector_store.as_retriever(search_kwargs={"k": 3})
+            # 2. Prompt de Reformulación (Contextualize Question)
+            # Si hay historial, reformula la pregunta para que sea independiente
+            contextualize_q_system_prompt = (
+                "Dalo un historial de chat y la última pregunta del usuario "
+                "que podría hacer referencia al contexto del historial, "
+                "formula una pregunta independiente que pueda entenderse "
+                "sin el historial. NO respondas a la pregunta, "
+                "solo reformúlala si es necesario o devuélvela tal cual."
+            )
 
-        # 2. Prompt de Reformulación (Contextualize Question)
-        # Si hay historial, reformula la pregunta para que sea independiente
-        contextualize_q_system_prompt = (
-            "Dalo un historial de chat y la última pregunta del usuario "
-            "que podría hacer referencia al contexto del historial, "
-            "formula una pregunta independiente que pueda entenderse "
-            "sin el historial. NO respondas a la pregunta, "
-            "solo reformúlala si es necesario o devuélvela tal cual."
+            contextualize_q_prompt = ChatPromptTemplate.from_messages([
+                ("system", contextualize_q_system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ])
+
+            # 3. History Aware Retriever
+            history_aware_retriever = create_history_aware_retriever(
+                self.llm, retriever, contextualize_q_prompt
+            )
+
+            # 4. Prompt de Respuesta Final (QA)
+            qa_system_prompt = (
+                "Eres un asistente experto. "
+                "Usa los siguientes fragmentos de contexto recuperado para responder la pregunta. "
+                "Si no sabes la respuesta o la información es limitada, puedes usar búsqueda en internet "
+                "para complementar la información. Para esto, debes usar el tool de búsqueda en internet. "
+                "Si no sabes la respuesta ni con la búsqueda en internet, di que no lo sabes. "
+                "Usa formato Markdown para estructurar tu respuesta (listas, negritas, etc).\n\n"
+                "{context}"
+            )
+
+            qa_prompt = ChatPromptTemplate.from_messages([
+                ("system", qa_system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ])
+
+            # 5. Cadena Final
+            question_answer_chain = create_stuff_documents_chain(self.llm, qa_prompt)
+            rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+            # Convertir historial de tuplas a objetos Message de LangChain
+            lc_history = []
+            for role, content in chat_history:
+                if role == "user":
+                    lc_history.append(HumanMessage(content=content))
+                elif role == "assistant":
+                    lc_history.append(AIMessage(content=content))
+
+            # Ejecutar
+            response = rag_chain.invoke({
+                "input": question,
+                "chat_history": lc_history
+            })
+
+            return response["answer"]
+        else:
+            # Handle general queries when no documents are available
+            # Convertir historial de tuplas a objetos Message de LangChain
+            lc_history = []
+            for role, content in chat_history:
+                if role == "user":
+                    lc_history.append(HumanMessage(content=content))
+                elif role == "assistant":
+                    lc_history.append(AIMessage(content=content))
+
+            # Create a simpler prompt for general conversation
+            system_prompt = ChatPromptTemplate.from_messages([
+                ("system", "Eres un asistente experto y útil. Responde preguntas de forma clara y precisa. Usa formato Markdown para estructurar tu respuesta (listas, negritas, etc)."),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ])
+
+            # Create the chain
+            chain = system_prompt | self.llm
+
+            # Execute
+            response = chain.invoke({
+                "input": question,
+                "chat_history": lc_history
+            })
+
+            return response.content
+
+    def analyze_image(self, image_content: bytes, image_filename: str) -> str:
+        """
+        Analiza una imagen usando un modelo de visión de OpenAI.
+        """
+        from langchain_core.messages import HumanMessage
+        import base64
+
+        # Encode the image to base64
+        encoded_image = base64.b64encode(image_content).decode('utf-8')
+
+        # Determine the image format from the filename
+        if image_filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            # Extract the format from the file extension
+            format_ext = image_filename.split('.')[-1].lower()
+            if format_ext == 'jpg':
+                format_ext = 'jpeg'  # OpenAI uses 'jpeg' for jpg files
+        else:
+            # Default to jpeg if format is unknown
+            format_ext = 'jpeg'
+
+        # Create a HumanMessage with content that includes both text and image
+        message = HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Describe esta imagen detalladamente. Si hay texto en la imagen, extráelo y preséntalo claramente. Si hay objetos, personas, gráficos o cualquier elemento visual importante, descríbelos."
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/{format_ext};base64,{encoded_image}"
+                    }
+                }
+            ]
         )
 
-        contextualize_q_prompt = ChatPromptTemplate.from_messages([
-            ("system", contextualize_q_system_prompt),
-            MessagesPlaceholder("chat_history"),
-            ("human", "{input}"),
-        ])
+        # Call the LLM with the message
+        response = self.llm.invoke([message])
 
-        # 3. History Aware Retriever
-        history_aware_retriever = create_history_aware_retriever(
-            self.llm, retriever, contextualize_q_prompt
-        )
+        return response.content
 
-        # 4. Prompt de Respuesta Final (QA)
-        qa_system_prompt = (
-            "Eres un asistente experto. "
-            "Usa los siguientes fragmentos de contexto recuperado para responder la pregunta. "
-            "Si no sabes la respuesta o la información es limitada, puedes usar búsqueda en internet "
-            "para complementar la información. Para esto, debes usar el tool de búsqueda en internet. "
-            "Si no sabes la respuesta ni con la búsqueda en internet, di que no lo sabes. "
-            "Usa formato Markdown para estructurar tu respuesta (listas, negritas, etc).\n\n"
-            "{context}"
-        )
-
-        qa_prompt = ChatPromptTemplate.from_messages([
-            ("system", qa_system_prompt),
-            MessagesPlaceholder("chat_history"),
-            ("human", "{input}"),
-        ])
-
-        # 5. Cadena Final
-        question_answer_chain = create_stuff_documents_chain(self.llm, qa_prompt)
-        rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
-
-        # Convertir historial de tuplas a objetos Message de LangChain
-        lc_history = []
-        for role, content in chat_history:
-            if role == "user":
-                lc_history.append(HumanMessage(content=content))
-            elif role == "assistant":
-                lc_history.append(AIMessage(content=content))
-
-        # Ejecutar
-        response = rag_chain.invoke({
-            "input": question,
-            "chat_history": lc_history
-        })
-
-        return response["answer"]
 
 # Instancia global
 rag_service = RAGService()
