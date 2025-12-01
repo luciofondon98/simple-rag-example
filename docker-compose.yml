@@ -1,0 +1,35 @@
+services:
+  # Servicio del Backend (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env  # Lee tu API Key desde aquí
+    volumes:
+      # Montamos el código en modo lectura para ver cambios si reiniciamos (opcional)
+      - ./backend/app:/app/app
+    networks:
+      - rag-network
+
+  # Servicio del Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Como el frontend corre en el navegador del usuario,
+      # localhost:8000 sigue siendo la forma de acceder al backend expuesto por Docker
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - rag-network
+
+networks:
+  rag-network:
+    driver: bridge
