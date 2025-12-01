@@ -1,0 +1,49 @@
+# Gitignore for simple-rag-modern project
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+.env/
+.pytest_cache/
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Temp files
+tmp/
+*.tmp
+*.swp
+*.swo
+
+# Docker specific
+# .dockerignore files are usually kept as they define what goes into the image
+# But we might want to ignore certain docker-related temporary files
+# e.g., if any docker volume mount creates local files that shouldn't be committed
+
+
+# Environment variables
+.env
+/backend/.env
