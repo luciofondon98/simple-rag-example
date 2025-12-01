@@ -1,91 +1,107 @@
-# 🏗️ Arquitectura del Sistema RAG (Deep Dive)
+# 🏗️ RAG System Architecture (Deep Dive)
 
-Este documento explica en detalle el funcionamiento interno, el flujo de datos y las decisiones de diseño del proyecto **Simple RAG Modern**. Está diseñado para entender no solo *cómo* se usa el código, sino *qué* ocurre "bajo el capó" en un sistema de Inteligencia Artificial Generativa.
-
----
-
-## 1. Visión General: El Concepto RAG
-
-**RAG (Retrieval-Augmented Generation)** es una técnica que optimiza la salida de un Modelo de Lenguaje (LLM) como GPT-4, permitiéndole consultar una base de conocimientos externa antes de responder.
-
-### La Analogía del Examen
-Imagina un examen:
-*   **ChatGPT estándar** es un estudiante haciendo un examen de memoria. Si no estudió el tema, alucinará (inventará).
-*   **RAG** es ese mismo estudiante, pero con un **libro de texto abierto** (tus PDFs) en el escritorio. Cuando le haces una pregunta, primero busca la respuesta en el libro y luego la redacta.
+This document explains in detail the internal workings, data flow, and design decisions of the **Simple RAG Modern** project. It is designed to understand not only *how* the code is used, but *what* happens "under the hood" in a Generative Artificial Intelligence system.
 
 ---
 
-## 2. Diagrama de Flujo de Datos
+## 1. Overview: The RAG Concept
 
-Cuando un usuario hace una pregunta, ocurre el siguiente proceso secuencial:
+**RAG (Retrieval-Augmented Generation)** is a technique that optimizes the output of a Language Model (LLM) like GPT-4, allowing it to consult an external knowledge base before responding.
+
+### The Exam Analogy
+Imagine an exam:
+*   **Standard ChatGPT** is a student taking an exam from memory. If they didn't study the topic, they will hallucinate (make things up).
+*   **RAG** is that same student, but with an **open textbook** (your PDFs) on the desk. When you ask them a question, they first look up the answer in the book and then write it down.
+
+---
+
+## 2. Data Flow Diagram
+
+When a user asks a question, the following sequential process occurs:
 
 ```mermaid
-Usuario -> [Frontend Next.js] -> [Backend FastAPI] -> [OpenAI Embeddings] -> [ChromaDB] -> [LangChain] -> [GPT-4] -> Usuario
+User -> [Frontend Next.js] -> [Backend FastAPI] -> [OpenAI Embeddings] -> [ChromaDB] -> [LangChain] -> [GPT-4] -> User
 ```
 
-### Fase A: Ingesta (Cuando subes un PDF)
+### Phase A: Ingestion (When you upload a PDF)
 
-1.  **Carga (`Loader`)**: El sistema lee el archivo binario PDF y extrae el texto plano.
-2.  **Fragmentación (`Splitting`)**: El texto se divide en bloques pequeños (*chunks*) de 1000 caracteres con un solapamiento (*overlap*) de 200 caracteres.
-    *   *¿Por qué?* Para preservar el contexto semántico. Si una frase importante se corta a la mitad, el solapamiento asegura que el siguiente bloque la tenga completa.
-3.  **Vectorización (`Embedding`)**: Cada bloque de texto se envía a OpenAI, que devuelve un **Vector** (una lista de 1536 números).
-    *   *Concepto Clave*: Este vector representa el **significado** del texto. Textos con significados similares tendrán vectores matemáticamente cercanos.
-4.  **Indexado**: Se guardan en **ChromaDB** los pares: `{ Vector, Texto Original }`.
+1.  **Loading (`Loader`)**: The system reads the binary PDF file and extracts the plain text.
+2.  **Splitting (`Splitting`)**: The text is divided into small blocks (*chunks*) of 1000 characters with a 200-character *overlap*.
+    *   *Why?* To preserve semantic context. If an important sentence is cut in half, the overlap ensures that the next block has it complete.
+3.  **Vectorization (`Embedding`)**: Each text block is sent to OpenAI, which returns a **Vector** (a list of 1536 numbers).
+    *   *Key Concept*: This vector represents the **meaning** of the text. Texts with similar meanings will have mathematically close vectors.
+4.  **Indexing**: The pairs: `{ Vector, Original Text }` are saved in **ChromaDB**.
 
-### Fase B: Consulta (Cuando chateas)
+### Phase B: Query (When you chat)
 
-1.  **Input**: El usuario pregunta: *"¿Quién es el protagonista?"*.
-2.  **Embedding de la Pregunta**: La pregunta se convierte también en un vector numérico.
-3.  **Búsqueda Semántica (Retrieval)**:
-    *   ChromaDB compara el vector de la pregunta con los millones de vectores de los documentos.
-    *   Utiliza **Similitud Coseno** para encontrar los "vecinos más cercanos".
-    *   Recupera los 3 fragmentos de texto más relevantes.
+1.  **Input**: The user asks: *"Who is the protagonist?"*.
+2.  **Question Embedding**: The question is also converted into a numerical vector.
+3.  **Semantic Search (Retrieval)**:
+    *   ChromaDB compares the question vector with millions of document vectors.
+    *   It uses **Cosine Similarity** to find the "nearest neighbors".
+    *   It retrieves the 3 most relevant text chunks.
 4.  **Prompt Engineering (Augmentation)**:
-    *   El Backend construye un mensaje invisible para el usuario. Inserta los 3 fragmentos recuperados dentro de una instrucción para el LLM.
-    *   *Estructura del Prompt*: "Usa ESTA información [Fragmento 1, 2, 3] para responder a ESTA pregunta [Input Usuario]".
-5.  **Generación**: El LLM (GPT-4o-mini) lee los fragmentos y genera una respuesta en lenguaje natural basada **estrictamente** en la evidencia proporcionada.
+    *   The Backend constructs an invisible message for the user. It inserts the 3 retrieved chunks into an instruction for the LLM.
+    *   *Prompt Structure*: "Use THIS information [Chunk 1, 2, 3] to answer THIS question [User Input]".
+5.  **Generation**: The LLM (GPT-4o-mini) reads the chunks and generates a natural language response based **strictly** on the provided evidence.
+
+### Phase C: Audio Transcription (When using voice input)
+
+1.  **Audio Recording**: The frontend captures audio using the browser's MediaRecorder API.
+2.  **Audio Encoding**: Audio is encoded in webm format with opus codec for optimal Whisper API compatibility.
+3.  **Audio Transmission**: The recorded audio is sent to the backend `/transcribe` endpoint.
+4.  **Audio Processing**: The backend receives the audio file and prepares it for OpenAI Whisper API.
+5.  **Transcription**: OpenAI Whisper processes the audio and returns the transcribed text.
+6.  **Response**: The transcribed text is sent back to the frontend and populated in the chat input field.
 
 ---
 
-## 3. Componentes Técnicos Detallados
+## 3. Detailed Technical Components
 
-### 🧠 El Cerebro: LangChain
-LangChain actúa como el orquestador. Es el framework que conecta las piezas. En este proyecto, utiliza `create_retrieval_chain` para automatizar el flujo de:
-1.  Ir a la base de datos.
-2.  Traer documentos.
-3.  Pegarlos en el prompt.
-4.  Llamar a OpenAI.
+### 🧠 The Brain: LangChain
+LangChain acts as the orchestrator. It is the framework that connects the pieces. In this project, it uses `create_retrieval_chain` to automate the flow of:
+1.  Going to the database.
+2.  Fetching documents.
+3.  Pasting them into the prompt.
+4.  Calling OpenAI.
 
-### 🗄️ La Memoria: ChromaDB
-Chroma es una base de datos **Vectorial**.
-*   **¿Dónde vive?**: En este MVP, vive en la memoria RAM del contenedor Docker (backend). Es efímera.
-*   **Función**: Permite búsquedas por "significado" y no por "palabras clave".
-    *   *Búsqueda clásica*: Si buscas "Coche", busca la palabra "Coche".
-    *   *Búsqueda vectorial*: Si buscas "Coche", encuentra "Automóvil", "Vehículo", "Ferrari", porque matemáticamente están cerca en el espacio latente.
+### 🗄️ The Memory: ChromaDB
+Chroma is a **Vector** database.
+*   **Where does it live?**: In this MVP, it lives in the RAM of the Docker container (backend). It is ephemeral.
+*   **Function**: It allows searches by "meaning" rather than "keywords".
+    *   *Classic search*: If you search for "Car", it searches for the word "Car".
+    *   *Vector search*: If you search for "Car", it finds "Automobile", "Vehicle", "Ferrari", because they are mathematically close in the latent space.
 
-### 🌐 El Cuerpo: FastAPI + Docker
-*   **FastAPI**: Expone los endpoints REST (`/chat`, `/upload`). Es asíncrono y muy rápido.
-*   **Docker**: Empaqueta todo el entorno.
-    *   El contenedor `backend` tiene Python instalado y todas las librerías de IA.
-    *   El contenedor `frontend` tiene Node.js y el servidor de Next.js optimizado.
-    *   `docker-compose` crea una red virtual privada donde ambos contenedores pueden hablarse entre sí, pero expone los puertos 3000 y 8000 a tu máquina host.
+### 🎤 Audio Processing: OpenAI Whisper API
+*   **Component**: New `/transcribe` endpoint in FastAPI backend
+*   **Function**: Converts audio recordings to text using Whisper API
+*   **Integration**: Frontend AudioRecorder component sends recorded audio to the backend for transcription
 
----
-
-## 4. Glosario de Términos IA
-
-*   **Embeddings**: Representación numérica de texto (listas de flotantes). Es el idioma que entienden las máquinas para comparar significados.
-*   **Chunks**: Fragmentos de texto. Los LLMs tienen un límite de memoria (ventana de contexto), por lo que no podemos enviarles libros enteros. Les enviamos chunks relevantes.
-*   **Alucinación**: Cuando un LLM inventa información. RAG reduce esto drásticamente al obligar al modelo a usar fuentes ("Grounding").
-*   **Temperature**: Un parámetro del LLM (configurado a 0 en este proyecto).
-    *   `0`: El modelo es determinista, aburrido y preciso. (Ideal para RAG).
-    *   `1`: El modelo es creativo y aleatorio.
+### 🌐 The Body: FastAPI + Docker
+*   **FastAPI**: Exposes REST endpoints (`/chat`, `/upload`, `/transcribe`). It is asynchronous and very fast.
+*   **Docker**: Packages the entire environment.
+    *   The `backend` container has Python installed and all AI libraries including OpenAI integration.
+    *   The `frontend` container has Node.js and the optimized Next.js server.
+    *   `docker-compose` creates a private virtual network where both containers can communicate with each other, but exposes ports 3000 and 8000 to your host machine.
 
 ---
 
-## 5. Guía de Extensión (Futuro)
+## 4. AI Terminology Glossary
 
-Para llevar este proyecto al siguiente nivel (Nivel Producción), se debería:
-1.  **Persistencia**: Configurar ChromaDB para guardar datos en disco, de modo que no se borren al reiniciar Docker.
-2.  **Memoria de Chat**: Actualmente cada pregunta es independiente. Se puede añadir `ConversationBufferMemory` en LangChain para que el bot recuerde preguntas anteriores.
-3.  **Streaming**: Hacer que el texto aparezca letra por letra (como ChatGPT) en lugar de esperar toda la respuesta de golpe.
+*   **Embeddings**: Numerical representation of text (lists of floats). It is the language machines understand to compare meanings.
+*   **Chunks**: Fragments of text. LLMs have a memory limit (context window), so we cannot send them entire books. We send them relevant chunks.
+*   **Hallucination**: When an LLM invents information. RAG drastically reduces this by forcing the model to use sources ("Grounding").
+*   **Temperature**: An LLM parameter (set to 0 in this project).
+    *   `0`: The model is deterministic, boring, and precise. (Ideal for RAG).
+    *   `1`: The model is creative and random.
+*   **Whisper API**: OpenAI's speech-to-text API, specialized for converting audio to text.
+
+---
+
+## 5. Extension Guide (Future)
+
+To take this project to the next level (Production Level), it should:
+1.  **Persistence**: Configure ChromaDB to save data to disk, so that it is not erased when Docker is restarted.
+2.  **Chat Memory**: Currently, each question is independent. `ConversationBufferMemory` can be added in LangChain for the bot to remember previous questions.
+3.  **Streaming**: Make the text appear letter by letter (like ChatGPT) instead of waiting for the entire response at once.
+4.  **Audio Enhancements**: Add server-side audio format conversion for broader compatibility, implement audio preprocessing for better transcription quality.

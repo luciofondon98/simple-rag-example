@@ -11,3 +11,4 @@ langchain-classic
 langchain-openai
 langchain-community
 langchain-chroma
+openai>=1.0.0

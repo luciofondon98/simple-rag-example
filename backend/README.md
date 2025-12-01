@@ -1,8 +1,15 @@
 # 🐍 Simple RAG - Backend (FastAPI)
 
-REST API for document processing and RAG system management.
+REST API for document processing and RAG system management with audio transcription capabilities.
 
 > **Note:** For a quick start of the entire system, it is recommended to use Docker from the root folder. Read the [main README](../README.md).
+
+## ✨ Features
+
+*   **Document Processing**: PDF upload and processing for RAG
+*   **Chat Interface**: Question-answering system with memory
+*   **Audio Transcription**: Whisper API integration for voice-to-text conversion
+*   **RESTful API**: Clean and well-documented endpoints
 
 ## 🛠️ Local Development (Manual)
 
@@ -37,3 +44,10 @@ Follow these steps if you want to run **only the backend** on your machine for d
     ```
 
 The server will be available at `http://localhost:8000`.
+
+## 📡 API Endpoints
+
+*   **GET /** - Health check
+*   **POST /upload** - Upload and process PDF documents
+*   **POST /chat** - Chat with your documents
+*   **POST /transcribe** - **NEW!** Transcribe audio to text using OpenAI Whisper

@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { Send, Upload, Loader2, Bot, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import AudioRecorder from '../components/AudioRecorder';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -196,10 +197,20 @@ export default function Home() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Pregunta a tus documentos..."
-              className="w-full p-3 pr-12 bg-gray-100 border-transparent focus:border-black focus:bg-white focus:ring-0 rounded-xl transition-all outline-none text-gray-700 placeholder-gray-400"
+              className="w-full p-3 pr-24 bg-gray-100 border-transparent focus:border-black focus:bg-white focus:ring-0 rounded-xl transition-all outline-none text-gray-700 placeholder-gray-400"
             />
-            <button 
-              type="submit" 
+            <div className="absolute right-12 flex items-center">
+              <AudioRecorder
+                onTranscription={(transcription) => {
+                  setInput(transcription);
+                  // Optionally submit automatically after transcription
+                  // handleSend({ preventDefault: () => {} } as FormEvent);
+                }}
+                disabled={processing}
+              />
+            </div>
+            <button
+              type="submit"
               disabled={!input.trim() || processing}
               className="absolute right-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >

@@ -7,6 +7,14 @@ It is built with a decoupled and professional architecture:
 *   **Frontend**: Next.js 14 (TypeScript + Tailwind CSS).
 *   **Infrastructure**: Docker & Docker Compose.
 
+## ✨ Features
+
+*   **Document Processing**: Upload and process PDF documents for RAG
+*   **Chat Interface**: Natural language interaction with your documents
+*   **Audio Transcription**: **NEW!** Record voice messages and have them transcribed using OpenAI Whisper API
+*   **Real-time Interaction**: Responsive chat interface with typing indicators
+*   **Dockerized**: Easy deployment with Docker Compose
+
 ## 🚀 Quick Start (Docker Mode)
 
 This is the easiest way to run the project. You don't need to install Python or Node.js on your machine, just Docker.
@@ -44,14 +52,15 @@ To stop the system, press `Ctrl+C` in the terminal or run `docker-compose down`.
 
 ```
 simple-rag-modern/
-├── docker-compose.yml   # Service orchestration
-├── backend/             # FastAPI API
-│   ├── app/             # RAG logic and endpoints
-│   ├── Dockerfile       # Python image configuration
+├── docker-compose.yml          # Service orchestration
+├── backend/                    # FastAPI API
+│   ├── app/                    # RAG logic, endpoints and audio transcription
+│   ├── Dockerfile              # Python image configuration
 │   └── requirements.txt
-└── frontend/            # Next.js App
-    ├── app/             # React pages and components
-    ├── Dockerfile       # Optimized Node.js image configuration
+└── frontend/                   # Next.js App
+    ├── app/                    # React pages and components
+    ├── components/             # Reusable components (AudioRecorder)
+    ├── Dockerfile              # Optimized Node.js image configuration
     └── package.json
 ```
 
