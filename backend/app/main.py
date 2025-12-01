@@ -61,6 +61,20 @@ def chat(request: ChatRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/chat_with_internet", response_model=ChatResponse)
+def chat_with_internet(request: ChatRequest):
+    """
+    Endpoint para realizar preguntas al sistema RAG con memoria y búsqueda en internet.
+    """
+    try:
+        # Convertimos la lista de listas a lista de tuplas para LangChain
+        formatted_history = [(msg[0], msg[1]) for msg in request.history]
+        answer = rag_service.get_answer_with_internet(request.question, formatted_history)
+        return ChatResponse(answer=answer)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
     """

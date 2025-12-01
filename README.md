@@ -12,7 +12,8 @@ It is built with a decoupled and professional architecture:
 *   **Document Processing**: Upload and process PDF documents for RAG
 *   **Chat Interface**: Natural language interaction with your documents
 *   **Audio Transcription**: **NEW!** Record voice messages and have them transcribed using OpenAI Whisper API
-*   **Real-time Interaction**: Responsive chat interface with typing indicators
+*   **Internet Search**: **NEW!** Search for current information on the internet when documents aren't sufficient
+*   **Real-time Interaction**: Responsive chat interface with typing indicators and smooth scrolling
 *   **Dockerized**: Easy deployment with Docker Compose
 
 ## 🚀 Quick Start (Docker Mode)
@@ -63,6 +64,20 @@ simple-rag-modern/
     ├── Dockerfile              # Optimized Node.js image configuration
     └── package.json
 ```
+
+## 🌐 New Features Explained
+
+### Internet Search Capability
+*   **Hybrid Search**: The system intelligently combines document-based RAG with internet search
+*   **Smart Decision**: Automatically decides when to use internet search based on document availability and relevance
+*   **Clear Indicators**: Shows when searching the internet with "Buscando en la web..." indicator
+*   **Endpoint**: New `/chat_with_internet` endpoint available for internet-enhanced responses
+
+### Frontend UI Improvements
+*   **Smooth Scrolling**: Automatically scrolls to the bottom when new messages appear
+*   **Internet Search Toggle**: Checkbox to enable/disable internet search capability
+*   **Enhanced Loading States**: Different loading messages for different operations
+*   **Status Indicators**: Clear indication of whether internet search is active
 
 ## 🔧 Local Development (Without Docker)
 

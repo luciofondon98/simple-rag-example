@@ -47,3 +47,9 @@ tmp/
 # Environment variables
 .env
 /backend/.env
+
+# AI markdown files
+QWEN.md
+GEMINI.md
+AGENTS.md
+langchain_tools.md

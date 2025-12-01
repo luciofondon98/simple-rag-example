@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Send, Upload, Loader2, Bot, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import AudioRecorder from '../components/AudioRecorder';
@@ -28,6 +28,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [useInternetSearch, setUseInternetSearch] = useState(false);
 
   const API_URL = 'http://localhost:8000';
 
@@ -64,8 +65,25 @@ export default function Home() {
     }
   };
 
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom of chat
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Use effect to scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, processing]);
+
   // Enviar mensaje al chat
-  const handleSend = async (e: FormEvent) => {
+  const handleSend = async (e: FormEvent, useInternetSearch = false) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -78,12 +96,14 @@ export default function Home() {
     const history = messages.slice(-6).map(m => [m.role, m.content]);
 
     try {
-      const response = await fetch(`${API_URL}/chat`, {
+      // Decide which endpoint to use based on the useInternetSearch flag
+      const endpoint = useInternetSearch ? '/chat_with_internet' : '/chat';
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           question: userMessage,
-          history: history 
+          history: history
         }),
       });
 
@@ -150,7 +170,7 @@ export default function Home() {
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-gray-50/50">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth" ref={chatContainerRef}>
           {messages.map((msg, idx) => (
             <div 
               key={idx} 
@@ -180,10 +200,15 @@ export default function Home() {
               <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shrink-0">
                 <Bot className="w-5 h-5 text-white" />
               </div>
-              <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 flex items-center gap-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {useInternetSearch ? "Buscando en la web..." : "Procesando..."}
+                </p>
               </div>
             </div>
           )}
@@ -191,31 +216,50 @@ export default function Home() {
 
         {/* Input Area */}
         <div className="p-4 bg-white border-t border-gray-200">
-          <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-center gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Pregunta a tus documentos..."
-              className="w-full p-3 pr-24 bg-gray-100 border-transparent focus:border-black focus:bg-white focus:ring-0 rounded-xl transition-all outline-none text-gray-700 placeholder-gray-400"
-            />
-            <div className="absolute right-12 flex items-center">
-              <AudioRecorder
-                onTranscription={(transcription) => {
-                  setInput(transcription);
-                  // Optionally submit automatically after transcription
-                  // handleSend({ preventDefault: () => {} } as FormEvent);
-                }}
-                disabled={processing}
+          <form onSubmit={(e) => handleSend(e, useInternetSearch)} className="max-w-4xl mx-auto relative flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Pregunta a tus documentos..."
+                className="flex-1 p-3 pr-24 bg-gray-100 border-transparent focus:border-black focus:bg-white focus:ring-0 rounded-xl transition-all outline-none text-gray-700 placeholder-gray-400"
               />
+              <div className="absolute right-20 flex items-center">
+                <AudioRecorder
+                  onTranscription={(transcription) => {
+                    setInput(transcription);
+                    // Optionally submit automatically after transcription
+                    // handleSend({ preventDefault: () => {} } as FormEvent);
+                  }}
+                  disabled={processing}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!input.trim() || processing}
+                className="absolute right-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              type="submit"
-              disabled={!input.trim() || processing}
-              className="absolute right-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 text-xs">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useInternetSearch}
+                  onChange={(e) => setUseInternetSearch(e.target.checked)}
+                  className="w-3 h-3 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-gray-600">Buscar en internet</span>
+              </label>
+              <span className="text-gray-400">|</span>
+              <span className="text-gray-500 italic">
+                {useInternetSearch
+                  ? "Usando internet para información actualizada"
+                  : "Usando documentos subidos"}
+              </span>
+            </div>
           </form>
         </div>
       </div>

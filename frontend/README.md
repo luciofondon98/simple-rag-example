@@ -9,8 +9,11 @@ Modern chat interface built with Next.js 14, TypeScript, and Tailwind CSS with a
 *   **Document Chat**: Natural language interaction with your PDF documents
 *   **Audio Recording**: **NEW!** Record voice messages using the built-in microphone button
 *   **Audio Transcription**: **NEW!** Automatic transcription of voice messages using OpenAI Whisper
+*   **Internet Search**: **NEW!** Toggle to search for current information on the internet for enhanced responses
 *   **Responsive Design**: Mobile-friendly interface with Tailwind CSS
 *   **Real-time Interaction**: Smooth chat experience with loading indicators
+*   **Auto-scrolling**: Automatically scrolls to the bottom when new messages appear
+*   **Enhanced UI**: Clear status indicators showing search mode and processing states
 
 ## 🛠️ Local Development (Manual)
 

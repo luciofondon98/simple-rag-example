@@ -54,6 +54,16 @@ User -> [Frontend Next.js] -> [Backend FastAPI] -> [OpenAI Embeddings] -> [Chrom
 5.  **Transcription**: OpenAI Whisper processes the audio and returns the transcribed text.
 6.  **Response**: The transcribed text is sent back to the frontend and populated in the chat input field.
 
+### Phase D: Internet Search (When enhanced information is needed)
+
+1.  **Request Enhancement**: The frontend provides a toggle to enable internet search capability
+2.  **Endpoint Selection**: The frontend calls the new `/chat_with_internet` endpoint instead of `/chat`
+3.  **Context Evaluation**: The backend evaluates if document context is sufficient for the query
+4.  **Smart Search Decision**: The system decides whether to supplement with internet search based on content sufficiency
+5.  **Web Search Execution**: If needed, DuckDuckGo search is performed to retrieve current information
+6.  **Response Integration**: The system combines document context and web search results for comprehensive answers
+7.  **User Feedback**: Clear indicators ("Buscando en la web...") inform users when internet search is happening
+
 ---
 
 ## 3. Detailed Technical Components

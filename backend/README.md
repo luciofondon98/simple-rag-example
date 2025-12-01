@@ -50,4 +50,5 @@ The server will be available at `http://localhost:8000`.
 *   **GET /** - Health check
 *   **POST /upload** - Upload and process PDF documents
 *   **POST /chat** - Chat with your documents
+*   **POST /chat_with_internet** - **NEW!** Chat with internet search capability for current information
 *   **POST /transcribe** - **NEW!** Transcribe audio to text using OpenAI Whisper
