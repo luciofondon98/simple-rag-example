@@ -43,6 +43,28 @@ The application will be available at `http://localhost:3000`.
 
 **Important:** For the frontend to work locally, you must have the backend running (either locally on port 8000 or via Docker).
 
+## 🐳 Docker Development
+
+For development with Docker and live reloading, use the development docker-compose configuration:
+
+1.  **Configure Environment Variables:**
+    Make sure you have your API Key configured for the backend.
+    *   Go to `backend/`
+    *   Create or edit the `.env` file:
+        ```
+        OPENAI_API_KEY=sk-your-key-here
+        ```
+
+2.  **Run with Development Docker Compose:**
+    From the project root, run:
+    ```bash
+    docker-compose -f docker-compose.dev.yml up --build
+    ```
+
+In Docker development mode:
+*   Changes to frontend files will automatically reload the Next.js development server
+*   The application will be available at `http://localhost:3000`
+
 ## 🏗️ Architecture
 
 The frontend includes:

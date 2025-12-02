@@ -48,6 +48,28 @@ Follow these steps if you want to run **only the backend** on your machine for d
 
 The server will be available at `http://localhost:8000`.
 
+## 🐳 Docker Development
+
+For development with Docker and live reloading, use the development docker-compose configuration:
+
+1.  **Configure Environment Variables:**
+    Make sure you have your API Key configured in the backend.
+    *   Go to `backend/`
+    *   Create or edit the `.env` file:
+        ```
+        OPENAI_API_KEY=sk-your-key-here
+        ```
+
+2.  **Run with Development Docker Compose:**
+    From the project root, run:
+    ```bash
+    docker-compose -f docker-compose.dev.yml up --build
+    ```
+
+In Docker development mode:
+*   Changes to Python files in `backend/app/` will automatically reload the backend server
+*   The server will be available at `http://localhost:8000`
+
 ## 📡 API Endpoints
 
 *   **GET /** - Health check

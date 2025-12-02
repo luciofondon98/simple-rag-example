@@ -57,3 +57,12 @@ langchain_llms.md
 
 # Temporary files created by editors
 .qwen
+
+# Images 
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.bmp
+*.tiff

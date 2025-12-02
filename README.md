@@ -27,7 +27,7 @@ This is the easiest way to run the project. You don't need to install Python or 
 *   [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
 *   An OpenAI API Key.
 
-### Steps
+### Production Mode
 
 1.  **Configure Environment Variables:**
     Make sure you have your API Key configured in the backend.
@@ -49,6 +49,54 @@ This is the easiest way to run the project. You don't need to install Python or 
     *   🔌 **Backend (API)**: Running at [http://localhost:8000](http://localhost:8000) (Automatic docs at [http://localhost:8000/docs](http://localhost:8000/docs))
 
 To stop the system, press `Ctrl+C` in the terminal or run `docker-compose down`.
+
+### Development Mode (With Live Reloading)
+
+For development with live reloading without rebuilding containers:
+
+1.  **Configure Environment Variables:**
+    Make sure you have your API Key configured in the backend.
+    *   Go to `backend/`
+    *   Create or edit the `.env` file:
+        ```bash
+        OPENAI_API_KEY=sk-your-key-here
+        ```
+
+2.  **Run with Development Docker Compose:**
+    From the root of this project (where this README is located), run:
+
+    ```bash
+    docker-compose -f docker-compose.dev.yml up --build
+    ```
+
+3.  **Ready!**
+    *   🌐 **Frontend (Chat)**: Open [http://localhost:3000](http://localhost:3000)
+    *   🔌 **Backend (API)**: Running at [http://localhost:8000](http://localhost:8000) (Automatic docs at [http://localhost:8000/docs](http://localhost:8000/docs))
+
+In development mode:
+*   Changes to Python files in `backend/app/` will automatically reload the backend server
+*   Changes to frontend files will automatically reload the Next.js development server
+*   No need to rebuild images for code changes - changes are reflected immediately
+*   Only rebuild when changing dependencies (requirements.txt, package.json): `docker-compose -f docker-compose.dev.yml up --build`
+
+To stop the system, press `Ctrl+C` in the terminal or run `docker-compose -f docker-compose.dev.yml down`.
+
+## Development Workflow
+
+Quick command to start development environment:
+```bash
+docker-compose -f docker-compose.dev.yml up
+```
+
+Rebuild containers when changing dependencies:
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+The development setup features:
+*   Live reloading for both frontend and backend
+*   Volume mounting to reflect code changes immediately
+*   Auto-restart on code changes
 
 ---
 

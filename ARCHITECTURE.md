@@ -122,6 +122,10 @@ Chroma is a **Vector** database.
     *   The `backend` container has Python installed and all AI libraries including OpenAI integration.
     *   The `frontend` container has Node.js and the optimized Next.js server.
     *   `docker-compose` creates a private virtual network where both containers can communicate with each other, but exposes ports 3000 and 8000 to your host machine.
+*   **Development Workflow**: For development, a separate `docker-compose.dev.yml` is available with volume mounting and live reloading capabilities:
+    *   Backend uses `--reload` flag for auto-restart on code changes
+    *   Frontend runs in development mode with hot module replacement
+    *   Source code is mounted as volumes so changes are reflected immediately without rebuilding containers
 
 ---
 

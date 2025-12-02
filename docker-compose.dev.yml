@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Servicio del Backend (FastAPI con reload para desarrollo)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      # Montamos el directorio completo del backend para ver cambios en tiempo real
+      - ./backend/app:/app/app
+      # Mount requirements.txt to allow pip install updates
+      - ./backend/requirements.txt:/app/requirements.txt
+    # Enable auto-reload for development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rag-network
+
+  # Servicio del Frontend (Next.js en modo desarrollo)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      # Como el frontend corre en el navegador del usuario,
+      # localhost:8000 sigue siendo la forma de acceder al backend expuesto por Docker
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      # Montamos el código fuente para desarrollo con recarga en vivo
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - rag-network
+
+networks:
+  rag-network:
+    driver: bridge
